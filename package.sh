@@ -48,19 +48,15 @@ set_local_commit() {
 }
 
 build() {
-    echo > ./error.log
-    _builder -v ./build:/opt/OpenXRay 2>./error.log
+    _builder -v $(pwd)/build:/opt/OpenXRay >./log.txt 2>&1
 }
 
 link() {
-    echo > ./error.log
-    _linker -v ./build:/xray-16 2>./error.log
+    _linker -v $(pwd)/build:/xray-16 >./log.txt 2>&1
 }
 
 package() {
-    echo > ./error.log
-    sudo chmod 777 dist build 2>./error.log
-    "$appimagetool" build dist/OpenXRay+$1.AppImage 2>./error.log
+    "$appimagetool" build dist/OpenXRay+$1.AppImage >./log.txt 2>&1
 }
 
 error_log() {
@@ -70,8 +66,11 @@ error_log() {
 while true; do
     last_commit=$(get_last_commit)
     if [ "$(get_local_commit)" != "$last_commit" ]; then
+        echo > ./log.txt
         set_local_commit $last_commit
         bot sendMessage -d text="Found new commit: $last_commit. Building..."
+        mkdir build dist
+        chmod 777 dist build
         if build; then
             bot sendMessage -d text="Attaching libs..."
             if link; then
